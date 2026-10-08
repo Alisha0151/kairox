@@ -33,6 +33,20 @@ docker compose up --build
 
 ## What each stage really does
 
+## Tech Stack
+
+| Layer | Technologies |
+|---|---|
+| Frontend | Next.js, TypeScript |
+| Backend | FastAPI, Python |
+| Demo Services | Python |
+| API Gateway | Node.js |
+| Database | PostgreSQL / SQLite for local testing |
+| Messaging | Redis Pub/Sub |
+| Infrastructure | Docker, Docker Compose |
+| CI/CD | GitHub Actions |
+| Testing | Python `unittest`, end-to-end testing |
+| Observability | Custom event ingestion, traces, logs, metrics, state-change events |
 | Stage | Implementation |
 |---|---|
 | **Observe** | Services push request / span / log / **state-change** events to `POST /ingest` (or standard OTLP/HTTP JSON to `POST /otlp/v1/traces`). Everything is stored as an append-only event log (PostgreSQL; SQLite for local/tests). Live updates over WebSocket (Redis pub/sub mirror). |
