@@ -56,6 +56,10 @@ web/       Next.js + TypeScript dashboard
 scripts/   loadgen.py, e2e.py (full-loop test against real processes)
 docs/      architecture
 ```
+##Architecture
+<img width="895" height="921" alt="image" src="https://github.com/user-attachments/assets/4e75e864-8a92-4958-b95c-0cd6dad74af3" />
+
+<img width="2974" height="3950" alt="Incident-responder-root" src="https://github.com/user-attachments/assets/aa4c0231-7372-4739-bd80-552b338e4b04" />
 
 ## Develop & test
 
