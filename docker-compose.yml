@@ -1,0 +1,75 @@
+# One command:  docker compose up --build      then open http://localhost:3000
+x-demo-env: &demo-env
+  KAIROX_URL: http://api:8000
+  INVENTORY_URL: http://inventory:9102
+  PAYMENTS_URL: http://payments:9103
+  ORDERS_URL: http://orders:9101
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment: { POSTGRES_USER: kairox, POSTGRES_PASSWORD: kairox, POSTGRES_DB: kairox }
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kairox"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql://kairox:kairox@postgres:5432/kairox
+      REDIS_URL: redis://redis:6379/0
+      KAIROX_SERVICES: gateway=http://gateway:9100,orders=http://orders:9101,inventory=http://inventory:9102,payments=http://payments:9103
+      # Optional: adds an LLM-written narrative on top of the rule-based evidence.
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    ports: ["8000:8000"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  web:
+    build:
+      context: ./web
+      args: { NEXT_PUBLIC_API_URL: http://localhost:8000 }
+    ports: ["3000:3000"]
+    depends_on: [api]
+
+  gateway:
+    build: ./gateway
+    environment: { PORT: "9100", ORDERS_URL: http://orders:9101, KAIROX_URL: http://api:8000 }
+    ports: ["9100:9100"]
+    depends_on: [orders]
+
+  orders:
+    build: { context: ., dockerfile: demo/Dockerfile }
+    command: ["services.py", "orders", "9101"]
+    environment: *demo-env
+
+  inventory:
+    build: { context: ., dockerfile: demo/Dockerfile }
+    command: ["services.py", "inventory", "9102"]
+    environment: *demo-env
+
+  payments:
+    build: { context: ., dockerfile: demo/Dockerfile }
+    command: ["services.py", "payments", "9103"]
+    environment: *demo-env
+
+  loadgen:
+    build: { context: ., dockerfile: demo/Dockerfile }
+    command: ["loadgen.py", "--url", "http://gateway:9100", "--rps", "8"]
+    depends_on: [gateway]
+    restart: unless-stopped
+
+volumes:
+  pgdata:
